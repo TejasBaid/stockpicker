@@ -6,9 +6,9 @@ position tracking with planned exits.
 
 ## Status
 
-**Phase 1 — data layer.** Database, auth, app shell, both provider clients and
-the full ingest pipeline are in place, with the Nifty 200 loaded. The screener,
-strategies, backtests and portfolio arrive in phases 2–4.
+**Phase 2 — factors and screener.** The Nifty 200 is loaded and screenable
+across 48 factors. Strategy building, backtests and portfolio tracking arrive
+in phases 3–4.
 
 ## Data sources
 
@@ -94,6 +94,32 @@ Tests run against real Postgres inside a rolled-back transaction. Note that
 Neon's pooled (`-pooler`) endpoint is PgBouncer in transaction mode: session
 state leaks between clients, so no code here may issue a session-level `SET` —
 `search_path` is pinned by a role default instead.
+
+## Factors
+
+48 factors across seven families — value, quality, growth, momentum, revisions,
+risk and ownership — each a pure function of a point-in-time panel, registered
+with the metadata the UI reads directly.
+
+They are **precomputed nightly**, never in the request path: the web service has
+512 MB and roughly a tenth of a CPU, so a screen has to be an indexed read plus
+a weighted sum, not a pandas job over six years of bars.
+
+Each factor is winsorized, z-scored globally and (where the factor is
+sector-bound) within sector, sign-flipped so every stored score reads
+higher-is-better, then stored with its percentile, decile and coverage. Names
+missing a factor score neutrally on it rather than being dropped — dropping
+them would quietly bias every screen toward large caps with fuller coverage.
+
+Two things worth knowing about the data:
+
+* The vendor reports market capitalisation in rupee **crore** but every absolute
+  statement figure in rupee **million**. Any factor mixing the two is wrong by a
+  factor of ten; `CRORE_TO_MILLION` in `app/factors/value.py` marks where that
+  conversion happens.
+* Factors built on balance-sheet structure — net cash, interest coverage — are
+  masked for lenders, whose borrowings are their raw material rather than
+  leverage. They are not merely extreme there, they are meaningless.
 
 ## Ingest
 

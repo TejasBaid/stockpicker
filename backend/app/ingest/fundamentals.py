@@ -36,6 +36,21 @@ log = structlog.get_logger(__name__)
 STATEMENT_KEYS = ("INC", "BAL", "CAS")
 
 
+def _dedupe(rows: list[dict[str, Any]], keys: tuple[str, ...]) -> list[dict[str, Any]]:
+    """Collapse rows sharing a unique key, keeping the last occurrence.
+
+    Postgres rejects an ON CONFLICT batch that proposes the same constrained
+    row twice ("cannot affect row a second time"), and this vendor does emit
+    duplicates within a single payload -- repeated statement line keys, and
+    corporate actions with identical type, ex-date and value. Without this, one
+    duplicated line discards the entire symbol.
+    """
+    seen: dict[tuple[Any, ...], dict[str, Any]] = {}
+    for row in rows:
+        seen[tuple(row.get(k) for k in keys)] = row
+    return list(seen.values())
+
+
 def report_dates_for(db: Session, symbol: str) -> dict[dt.date, dt.date]:
     """Actual earnings announcement dates, from previously ingested estimates.
 
@@ -183,6 +198,7 @@ def _write_statements(
                     }
                 )
 
+    rows = _dedupe(rows, ("symbol", "fiscal_end", "period_type", "statement", "line_key"))
     for i in range(0, len(rows), 1000):
         chunk = rows[i : i + 1000]
         stmt = pg_insert(FinancialStatement).values(chunk)
@@ -227,6 +243,7 @@ def _write_shareholding(db: Session, symbol: str, payload: dict[str, Any]) -> in
                     "percentage": pct,
                 }
             )
+    rows = _dedupe(rows, ("symbol", "holding_date", "category"))
     if rows:
         stmt = pg_insert(Shareholding).values(rows)
         db.execute(
@@ -267,6 +284,7 @@ def _write_corporate_actions(db: Session, symbol: str, payload: dict[str, Any]) 
     # The unique key includes `value`, which may be null; Postgres treats nulls
     # as distinct, so drop rows that cannot be de-duplicated reliably.
     rows = [r for r in rows if r["ex_date"] is not None and r["value"] is not None]
+    rows = _dedupe(rows, ("symbol", "action_type", "ex_date", "value"))
     if rows:
         stmt = pg_insert(CorporateAction).values(rows)
         db.execute(
@@ -281,6 +299,19 @@ def _write_corporate_actions(db: Session, symbol: str, payload: dict[str, Any]) 
             )
         )
     return len(rows)
+
+
+def _try_resolve_alias(db: Session, client: IndianApiClient, symbol: str) -> bool:
+    from app.ingest.instruments import resolve_vendor_aliases
+
+    inst = db.get(Instrument, symbol)
+    if inst is not None and inst.vendor_lookup_name:
+        return False  # already tried this route and it still failed
+    try:
+        return bool(resolve_vendor_aliases(db, client, [symbol]))
+    except Exception as exc:
+        log.warning("ingest.fundamentals.alias_lookup_failed", symbol=symbol, error=str(exc)[:160])
+        return False
 
 
 def ingest_fundamentals(
@@ -300,8 +331,23 @@ def ingest_fundamentals(
             counts = ingest_stock(db, client, symbol, as_of=as_of)
             written += sum(counts.values())
             log.info("ingest.fundamentals.ok", symbol=symbol, **counts)
-        except SymbolNotCovered as exc:
-            log.warning("ingest.fundamentals.uncovered", symbol=symbol, error=str(exc)[:160])
+        except SymbolNotCovered:
+            # The vendor cannot resolve a few NSE codes (those containing "&").
+            # Look up an alias and retry once -- lazily, so the ~195 symbols
+            # that work normally never pay for a search call.
+            if _try_resolve_alias(db, client, symbol):
+                try:
+                    counts = ingest_stock(db, client, symbol, as_of=as_of)
+                    written += sum(counts.values())
+                    log.info("ingest.fundamentals.ok_via_alias", symbol=symbol, **counts)
+                    continue
+                except Exception as exc:
+                    log.warning(
+                        "ingest.fundamentals.alias_retry_failed",
+                        symbol=symbol,
+                        error=str(exc)[:160],
+                    )
+            log.warning("ingest.fundamentals.uncovered", symbol=symbol)
             uncovered.append(symbol)
             inst = db.get(Instrument, symbol)
             if inst is not None:

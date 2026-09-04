@@ -150,3 +150,57 @@ export const dataApi = {
   overview: () => api.get<DataOverview>('/api/v1/data/overview'),
   runs: (limit = 30) => api.get<IngestRun[]>(`/api/v1/data/runs?limit=${limit}`),
 }
+
+export interface FactorMeta {
+  name: string
+  label: string
+  description: string
+  unit: string
+  higher_is_better: boolean
+  sector_neutral: boolean
+}
+
+export interface Preset {
+  slug: string
+  name: string
+  description: string
+  weights: Record<string, number>
+  filters: { factor: string; op: string; value: number }[]
+}
+
+export interface ScreenResult {
+  rank: number
+  symbol: string
+  name: string | null
+  sector: string | null
+  composite: number
+  contributions: Record<string, number>
+  factors: Record<string, { raw: number | null; decile: number | null }>
+}
+
+export interface ScreenResponse {
+  as_of: string
+  universe: string
+  universe_size: number
+  eligible: number
+  returned: number
+  basis: string
+  weights: Record<string, number>
+  coverage: Record<string, number>
+  results: ScreenResult[]
+}
+
+export const screenerApi = {
+  factors: () =>
+    api.get<{ categories: Record<string, FactorMeta[]>; count: number }>(
+      '/api/v1/screener/factors',
+    ),
+  presets: () => api.get<{ presets: Preset[] }>('/api/v1/screener/presets'),
+  run: (body: {
+    weights: Record<string, number>
+    filters?: { factor: string; op: string; value: number }[]
+    limit?: number
+    max_per_sector?: number | null
+    basis?: string
+  }) => api.post<ScreenResponse>('/api/v1/screener/run', body),
+}

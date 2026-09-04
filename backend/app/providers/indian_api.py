@@ -125,6 +125,11 @@ class IndianApiClient:
         data = self._get("/stock", {"name": lookup_name or symbol})
         if not isinstance(data, dict) or "companyName" not in data:
             raise SymbolNotCovered(f"/stock returned no company for {symbol}")
+        # The vendor sometimes returns a company shell with no metrics and no
+        # financials at all. Writing that would create an all-null snapshot and
+        # inflate the coverage figures, so treat it as no data.
+        if not data.get("keyMetrics") and not data.get("financials"):
+            raise SymbolNotCovered(f"/stock returned an empty payload for {symbol}")
         return data
 
     def statement(self, symbol: str, stats: str) -> Any:

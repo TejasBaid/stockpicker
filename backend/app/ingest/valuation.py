@@ -19,9 +19,14 @@ from sqlalchemy.orm import Session
 from app.db.models.fundamentals import ValuationHistory
 from app.ingest.normalize import to_float
 from app.ingest.pit import parse_date
-from app.providers.indian_api import VALUATION_FILTERS, IndianApiClient, SymbolNotCovered
+from app.providers.indian_api import IndianApiClient, SymbolNotCovered
 
 log = structlog.get_logger(__name__)
+
+# Each filter costs one call per symbol. Only the P/E series is consumed today
+# (by the "cheap vs its own history" factor), so the others are opt-in rather
+# than quietly quadrupling the nightly bill.
+DEFAULT_FILTERS = ("pe",)
 
 
 def ingest_valuation_history(
@@ -30,7 +35,7 @@ def ingest_valuation_history(
     symbols: list[str],
     *,
     period: str = "5yr",
-    filters: tuple[str, ...] = VALUATION_FILTERS,
+    filters: tuple[str, ...] = DEFAULT_FILTERS,
 ) -> tuple[int, list[str]]:
     written = 0
     failed: list[str] = []

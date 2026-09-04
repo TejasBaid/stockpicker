@@ -3,6 +3,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { Spinner } from '@/components/ui/spinner'
 import { useCurrentUser } from '@/hooks/useAuth'
 import DataHealth from '@/routes/DataHealth'
+import Screener from '@/routes/Screener'
 import { Placeholder } from '@/routes/Placeholder'
 import SignIn from '@/routes/SignIn'
 import SignUp from '@/routes/SignUp'
@@ -35,16 +36,7 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route
-          index
-          element={
-            <Placeholder
-              title="Screener"
-              description="Rank the Nifty 200 by any combination of value, quality, growth, momentum and revision factors."
-              phase="phase 2"
-            />
-          }
-        />
+        <Route index element={<Screener />} />
         <Route
           path="strategies"
           element={

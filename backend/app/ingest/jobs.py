@@ -107,9 +107,6 @@ def job_fundamentals(db: Session, symbols: list[str], *, full: bool = False) -> 
     targets = symbols if full else _slice_for_today(symbols, FUNDAMENTALS_SLICES)
     try:
         with IndianApiClient(db) as client:
-            # A handful of symbols (those containing "&") cannot be looked up by
-            # NSE code at this vendor; resolve their aliases before fetching.
-            instruments.resolve_vendor_aliases(db, client, targets)
             rows, failed, uncovered = fundamentals.ingest_fundamentals(db, client, targets)
             used = client.budget.used_today()
         rec.finish(
@@ -162,7 +159,8 @@ def job_factors(db: Session, symbols: list[str]) -> dict[str, Any]:
     rec = RunRecorder(db, "factors")
     try:
         result = precompute_factors(db, symbols)
-        rec.finish(rows=result.get("rows", 0), processed=len(symbols), **result)
+        details = {k: v for k, v in result.items() if k not in {"rows", "symbols"}}
+        rec.finish(rows=result.get("rows", 0), processed=len(symbols), **details)
         return result
     except Exception as exc:
         rec.finish("failed", error=str(exc)[:500])

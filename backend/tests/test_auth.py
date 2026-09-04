@@ -35,9 +35,7 @@ def test_full_signup_signin_signout_cycle(client: TestClient, db: Session) -> No
 
     r = _signup(client, code)
     assert r.status_code == 201, r.text
-    body = r.json()
-    assert body["email"] == "first@example.com"
-    assert body["is_admin"] is True  # first user in an empty system becomes admin
+    assert r.json()["email"] == "first@example.com"
 
     assert client.get("/api/v1/auth/me").json()["email"] == "first@example.com"
 
@@ -98,14 +96,38 @@ def test_duplicate_email_is_rejected(client: TestClient, db: Session) -> None:
 
 
 def test_only_admins_can_mint_invites(client: TestClient, db: Session) -> None:
-    _signup(client, auth_service.create_invite(db), "admin@example.com")  # first == admin
+    """Admin status is set explicitly rather than relying on being the first
+    account: tests share a database with real rows, so global state must not
+    decide the outcome."""
+    from sqlalchemy import select
+
+    from app.db.models.auth import User
+
+    _signup(client, auth_service.create_invite(db), "member@example.com")
+    user = db.scalar(select(User).where(User.email == "member@example.com"))
+    assert user is not None
+
+    user.is_admin = False
+    db.commit()
+    assert client.post("/api/v1/auth/invites", json={"label": "y"}).status_code == 403
+
+    user.is_admin = True
+    db.commit()
     assert client.post("/api/v1/auth/invites", json={"label": "x"}).status_code == 201
 
-    client.post("/api/v1/auth/signout")
-    code2 = auth_service.create_invite(db)
-    _signup(client, code2, "second@example.com")  # not the first user, so not admin
-    r = client.post("/api/v1/auth/invites", json={"label": "y"})
-    assert r.status_code == 403
+
+def test_the_first_account_in_an_empty_system_becomes_admin(
+    client: TestClient, db: Session
+) -> None:
+    from sqlalchemy import func, select
+
+    from app.db.models.auth import User
+
+    had_users = bool(db.scalar(select(func.count()).select_from(User)))
+    r = _signup(client, auth_service.create_invite(db), "bootstrap@example.com")
+    assert r.status_code == 201
+    # Deterministic either way: admin exactly when the system started empty.
+    assert r.json()["is_admin"] is (not had_users)
 
 
 def test_expired_invite_is_rejected(db: Session) -> None:
