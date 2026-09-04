@@ -1,0 +1,43 @@
+name: Nightly ingest
+
+# Render's free tier has no cron jobs or background workers, so the data
+# pipeline runs here instead. This also gets a full 2-core / 7 GB runner rather
+# than a 512 MB / 0.1 CPU instance, and does not need the web service awake.
+on:
+  schedule:
+    # 18:00 IST on weekdays (12:30 UTC), after the NSE close.
+    - cron: '30 12 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Which ingest job to run
+        required: false
+        default: nightly
+        type: choice
+        options: [nightly, instruments, bars, fundamentals, statements, estimates, factors]
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync
+      - name: Run ingest
+        run: uv run python -m app.ingest.jobs ${{ inputs.job || 'nightly' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GROWW_API_KEY: ${{ secrets.GROWW_API_KEY }}
+          GROWW_SECRET: ${{ secrets.GROWW_SECRET }}
+          INDIAN_API_KEY: ${{ secrets.INDIAN_API_KEY }}
+          INDIAN_API_DAILY_BUDGET: ${{ vars.INDIAN_API_DAILY_BUDGET || '400' }}

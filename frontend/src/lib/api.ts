@@ -1,0 +1,97 @@
+/**
+ * API client.
+ *
+ * Requests are same-origin (Vite proxies /api in dev), so the httpOnly session
+ * cookie is sent automatically and no token is ever held in JavaScript.
+ *
+ * The backend runs on Render's free tier and sleeps when idle, so the first
+ * request after a quiet period can take ~50s to wake it. `ApiError.isColdStart`
+ * lets the UI say "waking the server" instead of looking broken.
+ */
+
+const BASE = import.meta.env.VITE_API_URL ?? ''
+const WAKE_TIMEOUT_MS = 75_000
+
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+    readonly isColdStart = false,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), WAKE_TIMEOUT_MS)
+
+  let res: Response
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      ...init,
+      signal: controller.signal,
+      credentials: 'include',
+      headers: {
+        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...init.headers,
+      },
+    })
+  } catch (err) {
+    clearTimeout(timer)
+    const aborted = err instanceof DOMException && err.name === 'AbortError'
+    throw new ApiError(0, aborted ? 'The server took too long to wake up.' : 'Network error.', true)
+  }
+  clearTimeout(timer)
+
+  if (res.status === 204) return undefined as T
+
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    const detail =
+      (body && typeof body.detail === 'string' && body.detail) || `Request failed (${res.status})`
+    throw new ApiError(res.status, detail)
+  }
+  return body as T
+}
+
+export const api = {
+  get: <T>(path: string) => request<T>(path),
+  post: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
+  patch: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
+  del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+}
+
+export interface User {
+  id: string
+  email: string
+  display_name: string
+  is_admin: boolean
+}
+
+export interface Health {
+  status: 'ok' | 'degraded'
+  database: boolean
+}
+
+export const authApi = {
+  me: () => api.get<User>('/api/v1/auth/me'),
+  signIn: (email: string, password: string) =>
+    api.post<User>('/api/v1/auth/signin', { email, password }),
+  signUp: (payload: {
+    invite_code: string
+    email: string
+    display_name: string
+    password: string
+  }) => api.post<User>('/api/v1/auth/signup', payload),
+  signOut: () => api.post<void>('/api/v1/auth/signout'),
+  createInvite: (label: string, ttl_days = 14) =>
+    api.post<{ code: string; expires_in_days: number }>('/api/v1/auth/invites', { label, ttl_days }),
+}
+
+export const opsApi = {
+  health: () => api.get<Health>('/health'),
+}

@@ -1,0 +1,54 @@
+[project]
+name = "screener-backend"
+version = "0.1.0"
+description = "Nifty 200 investment screening platform"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.118",
+    "uvicorn[standard]>=0.37",
+    "sqlalchemy>=2.0.36",
+    "psycopg[binary,pool]>=3.2",
+    "alembic>=1.14",
+    "pydantic[email]>=2.10",
+    "pydantic-settings>=2.7",
+    "httpx>=0.28",
+    "structlog>=25.1",
+    "argon2-cffi>=23.1",
+    "pyjwt>=2.10",
+    "python-multipart>=0.0.20",
+    "pandas>=2.2",
+    "numpy>=2.1",
+    "scipy>=1.14",
+    "python-dateutil>=2.9",
+    "tenacity>=9.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "types-python-dateutil",
+    "respx>=0.22",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RUF"]
+ignore = ["B008"]
+
+[tool.mypy]
+python_version = "3.12"
+exclude = ["app/db/migrations/", "legacy/"]
+plugins = []
+warn_unused_ignores = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

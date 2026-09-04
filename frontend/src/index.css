@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* Design tokens. Dark is the default -- this is a tool people stare at for
+   long stretches -- but light is fully supported and toggled on <html>. */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+@layer base {
+  :root {
+    --bg: oklch(99% 0.002 250);
+    --surface: oklch(100% 0 0);
+    --surface-2: oklch(97.2% 0.003 250);
+    --border: oklch(91% 0.005 250);
+    --text: oklch(21% 0.012 255);
+    --text-muted: oklch(52% 0.014 255);
+    --accent: oklch(55% 0.16 258);
+    --accent-fg: oklch(99% 0 0);
+    --pos: oklch(58% 0.14 155);
+    --neg: oklch(58% 0.19 22);
+    --warn: oklch(70% 0.15 75);
+  }
+
+  .dark {
+    --bg: oklch(17.5% 0.012 258);
+    --surface: oklch(21% 0.014 258);
+    --surface-2: oklch(25% 0.016 258);
+    --border: oklch(31% 0.016 258);
+    --text: oklch(95% 0.005 250);
+    --text-muted: oklch(66% 0.014 255);
+    --accent: oklch(70% 0.14 255);
+    --accent-fg: oklch(17% 0.012 258);
+    --pos: oklch(74% 0.15 155);
+    --neg: oklch(69% 0.18 20);
+    --warn: oklch(80% 0.14 80);
+  }
+
+  * { border-color: var(--border); }
+
+  html, body, #root { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Figures must line up in columns; this is a screener. */
+  .tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+}
+
+@utility surface { background-color: var(--surface); }
+@utility surface-2 { background-color: var(--surface-2); }
+@utility text-muted { color: var(--text-muted); }
+@utility text-pos { color: var(--pos); }
+@utility text-neg { color: var(--neg); }

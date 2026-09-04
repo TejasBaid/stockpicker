@@ -1,8 +1,23 @@
-backend/.venv/
-backend/data/cache/
-backend/__pycache__/
-**/__pycache__/
-*.pyc
-frontend/node_modules/
-frontend/dist/
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# OS / editor
 .DS_Store
+.idea/
+.vscode/

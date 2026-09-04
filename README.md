@@ -1,92 +1,101 @@
-# Nifty Multi-Factor Screener
+# Nifty 200 Investment Platform
 
-A systematic long-only equity screener over the Nifty 200 universe, plus a web
-UI to run it interactively. Replaces `rough-screener.py` (kept for reference)
-with a proper backend service + frontend.
+A multi-factor screening and portfolio-planning platform for Indian equities:
+deep fundamentals, custom strategies, point-in-time backtests, and long-term
+position tracking with planned exits.
 
-## What's new vs. the rough version
+## Status
 
-- **Growth factor** (revenue/earnings growth) split out from quality, so a
-  profitable-but-stagnant stock doesn't get the same score as one that's
-  actually growing.
-- **Sector-relative scoring**: every fundamental factor blends a global
-  z-score with a within-sector z-score, so one hot sector can't dominate
-  every slot and "best of a weak sector" isn't over-rewarded either.
-- **Liquidity gate**: stocks with average daily traded value below a
-  threshold (default ₹5 Cr) are dropped before ranking — the old version had
-  this as a comment in the execution notes but never enforced it.
-- **Trend gate**: optional filter requiring price > 200-day SMA, so a
-  statistically cheap stock in a structural downtrend doesn't get selected.
-- **Diversified, correlation-aware selection**: greedy top-N selection that
-  enforces a max-per-sector cap and skips candidates too highly correlated
-  with an already-selected name, instead of just taking the top-N composite
-  scores regardless of overlap.
-- **Risk-based position sizing** (inverse volatility, clamped) plus a
-  suggested ATR-based stop-loss level per position.
-- **Missing-data handling**: fundamentals are median-filled per factor
-  instead of silently dropping stocks with sparse data (previously biased
-  against small/mid caps).
-- **Backtest fix**: the original backtest re-invested only the
-  regime-deployed *fraction of last quarter's invested value* each
-  rebalance, silently discarding the cash buffer — compounding losses to
-  near-zero whenever the regime stayed defensive for a few quarters. The
-  fixed version tracks total equity (invested + cash) and carries the cash
-  buffer forward correctly.
-- **Disk-cached data layer**: yfinance price/fundamentals pulls are cached
-  to parquet with a TTL, so the web UI serves screens instantly and only
-  hits the network on an explicit refresh.
+**Phase 0 — foundation.** Database, auth and app shell are in place. Screener,
+strategies, backtests and portfolio arrive in phases 1–4.
+
+## Data sources
+
+| Source | Used for | Not used for |
+|---|---|---|
+| [Indian Stock API](https://stock.indianapi.in) | ~145 fundamental metrics per stock, 8 annual + 11 interim periods of income statement / balance sheet / cash flow, analyst estimates and revisions, price targets, shareholding, corporate actions, announcements, valuation-multiple history | — |
+| [Groww Trade API](https://groww.in/trade-api/docs/python-sdk) | Instrument master, daily OHLCV candles, live quotes | **Holdings, positions, orders and margin are never called.** No endpoint that touches the brokerage account exists in this codebase. |
+
+Both providers key off the plain NSE trading symbol (`TATASTEEL`), which is the
+join key throughout.
+
+### Point-in-time correctness
+
+Every fundamental row stores `known_on` — the date the market could first have
+known it. Screens and backtests filter on it.
+
+The vendor's `StatementDate` field is broken (it reports the same date for every
+fiscal period), so `known_on` comes from `/stock_forecasts.ActualReportDate`
+where available, and otherwise from the SEBI LODR Reg. 33 filing deadline
+(fiscal end + 45 days interim, + 60 days annual). Rows using the fallback are
+flagged `known_on_estimated` and surfaced in the UI, so a backtest never quietly
+overstates its edge.
 
 ## Architecture
 
 ```
-backend/   FastAPI service — data fetching/caching, factor engines,
-           regime detection, portfolio construction, backtest
-frontend/  React (Vite) single-page app
+GitHub Actions (scheduler + compute)
+  ├─ nightly: ingest bars, fundamentals, statements, estimates, actions
+  ├─ nightly: precompute all factor values, z-scores, sector ranks, deciles
+  └─ on demand: run queued backtest jobs
+                  │
+                  ▼
+          Neon Postgres  ◀── the only state
+                  │
+                  ▼
+  Render free web service (FastAPI)  →  reads SQL, serves JSON
+  Render static site (React + TS)    →  free, never sleeps
 ```
 
-## Running it
+Render's free tier has no cron jobs, no background workers and no persistent
+disk, and gives 512 MB / ~0.1 CPU. So all heavy work happens in GitHub Actions,
+factors are precomputed rather than calculated per request, and the web service
+only reads. See `render.yaml` and `.github/workflows/`.
 
-### Backend
+## Local development
+
+Requires Python 3.13 ([uv](https://docs.astral.sh/uv/)), Node 22+, and a Neon
+Postgres database.
 
 ```bash
+cp backend/.env.example backend/.env    # then fill in the values
+
 cd backend
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+uv sync
+uv run alembic upgrade head
+uv run python -m app.cli invite --label "you"   # mint your first invite code
+uv run uvicorn app.main:app --reload
+
+cd ../frontend
+npm install
+npm run dev                              # http://localhost:5173
 ```
 
-First call `POST /api/refresh` (or click "Refresh Market Data" in the UI) to
-pull price history + fundamentals for the Nifty 200 universe (~30-60s). After
-that, screens and backtests run instantly off the cache.
+Access is invite-only; there is no public sign-up. The first account created
+becomes the administrator.
 
-### Frontend
+### Checks
 
 ```bash
-cd frontend
-npm install
-npm run dev
+cd backend  && uv run ruff check app tests && uv run mypy app && uv run pytest
+cd frontend && npx tsc -b --noEmit && npm run build
 ```
 
-Open http://localhost:5173. It talks to the backend at `http://127.0.0.1:8000`
-by default — override with a `VITE_API_URL` env var if needed.
+Tests run against real Postgres inside a rolled-back transaction. Note that
+Neon's pooled (`-pooler`) endpoint is PgBouncer in transaction mode: session
+state leaks between clients, so no code here may issue a session-level `SET` —
+`search_path` is pinned by a role default instead.
 
-## API
+## Admin CLI
 
-- `GET  /api/status` — cache freshness / refresh progress
-- `POST /api/refresh` — kick off a fresh network pull (async, poll `/api/status`)
-- `GET  /api/regime` — current market regime only
-- `POST /api/screen` — `{capital, top_n, weights, factor_mode, max_per_sector, min_liquidity_cr, require_uptrend}` → ranked portfolio
-- `POST /api/backtest` — same params → rolling quarterly walk-forward backtest with equity curve
+```bash
+uv run python -m app.cli invite --label "name" --ttl-days 14
+uv run python -m app.cli whoami
+uv run python -m app.cli delete-user EMAIL
+uv run python -m app.cli purge-sessions
+```
 
-## Known limitations
+## Not investment advice
 
-- Fundamentals (P/E, ROE, growth, etc.) are point-in-time snapshots from
-  yfinance, not point-in-time historical — the backtest treats them as
-  static across the whole backtest window, which overstates the realism of
-  the fundamentals-based factors (quality/growth/value) in the backtest.
-  Momentum, low-vol, liquidity, and trend are computed correctly
-  point-in-time since they only need price/volume history.
-- Universe is Nifty 200 (`backend/data/universe.csv`) — swap that file
-  (needs a `Symbol` column) to screen a different universe.
-- This is a research/decision-support tool, not investment advice. Paper
-  trade before committing capital.
+This is a research tool. It does not place orders and it does not tell you what
+to buy.
