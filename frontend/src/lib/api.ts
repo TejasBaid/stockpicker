@@ -95,3 +95,58 @@ export const authApi = {
 export const opsApi = {
   health: () => api.get<Health>('/health'),
 }
+
+export interface Dataset {
+  key: string
+  label: string
+  symbols: number
+  rows: number
+  coverage_pct: number
+  latest: string | null
+  source: string
+  note: string | null
+}
+
+export interface IngestRun {
+  id: string
+  job: string
+  status: string
+  started_at: string
+  finished_at: string | null
+  duration_seconds: number | null
+  rows_written: number
+  symbols_processed: number
+  symbols_failed: number
+  api_calls: number
+  error: string | null
+  details: Record<string, unknown>
+}
+
+export interface DataOverview {
+  universe_size: number
+  instruments: number
+  latest_bar_date: string | null
+  bars_stale_days: number | null
+  datasets: Dataset[]
+  point_in_time: {
+    total_rows: number
+    exact_rows: number
+    estimated_rows: number
+    exact_pct: number
+  }
+  provider_usage: {
+    history: { provider: string; date: string; calls: number; errors: number }[]
+    indian_api: {
+      used_today: number
+      daily_budget: number
+      remaining: number
+      pct_used: number
+    }
+  }
+  recent_runs: IngestRun[]
+}
+
+export const dataApi = {
+  overview: () => api.get<DataOverview>('/api/v1/data/overview'),
+  runs: (limit = 30) => api.get<IngestRun[]>(`/api/v1/data/runs?limit=${limit}`),
+}

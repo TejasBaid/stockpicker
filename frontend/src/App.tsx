@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Spinner } from '@/components/ui/spinner'
 import { useCurrentUser } from '@/hooks/useAuth'
+import DataHealth from '@/routes/DataHealth'
 import { Placeholder } from '@/routes/Placeholder'
 import SignIn from '@/routes/SignIn'
 import SignUp from '@/routes/SignUp'
@@ -80,16 +81,7 @@ export default function App() {
             <Placeholder title="Watchlist" description="Names you're tracking." phase="phase 4" />
           }
         />
-        <Route
-          path="data"
-          element={
-            <Placeholder
-              title="Data health"
-              description="Ingest runs, factor coverage and API budget usage."
-              phase="phase 1"
-            />
-          }
-        />
+        <Route path="data" element={<DataHealth />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

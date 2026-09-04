@@ -42,6 +42,12 @@ class Instrument(Base, TimestampMixin):
     groww_symbol: Mapped[str | None] = mapped_column(String(60))
     lot_size: Mapped[int | None] = mapped_column(Integer)
 
+    # The Indian Stock API cannot resolve symbols containing "&" (M&M, GVT&D):
+    # its /stock lookup 404s on them even URL-encoded. When set, this name is
+    # used for that provider instead of the symbol. Discovered automatically
+    # via /industry_search rather than hardcoded.
+    vendor_lookup_name: Mapped[str | None] = mapped_column(String(200))
+
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     # Set when the Indian API has no coverage for this symbol, so ingest can skip it.
     fundamentals_available: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

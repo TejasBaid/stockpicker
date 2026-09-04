@@ -216,6 +216,11 @@ class Estimate(Base, TimestampMixin):
     fiscal_year: Mapped[int] = mapped_column(BigInteger, nullable=False)
     fiscal_month: Mapped[int | None] = mapped_column(BigInteger)
     relative_period: Mapped[int | None] = mapped_column(BigInteger)
+    # The calendar date the fiscal period actually ends. Stored explicitly
+    # because the vendor labels interim periods by Indian fiscal year -- Q1 of
+    # "FY2027" is the quarter ending June *2026* -- so deriving it from
+    # fiscal_year is off by a year for three quarters out of four.
+    period_end: Mapped[date | None] = mapped_column(Date, index=True)
 
     actual: Mapped[float | None] = mapped_column(Float)
     mean_estimate: Mapped[float | None] = mapped_column(Float)

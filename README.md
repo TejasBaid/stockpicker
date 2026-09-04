@@ -6,8 +6,9 @@ position tracking with planned exits.
 
 ## Status
 
-**Phase 0 — foundation.** Database, auth and app shell are in place. Screener,
-strategies, backtests and portfolio arrive in phases 1–4.
+**Phase 1 — data layer.** Database, auth, app shell, both provider clients and
+the full ingest pipeline are in place, with the Nifty 200 loaded. The screener,
+strategies, backtests and portfolio arrive in phases 2–4.
 
 ## Data sources
 
@@ -17,7 +18,15 @@ strategies, backtests and portfolio arrive in phases 1–4.
 | [Groww Trade API](https://groww.in/trade-api/docs/python-sdk) | Instrument master, daily OHLCV candles, live quotes | **Holdings, positions, orders and margin are never called.** No endpoint that touches the brokerage account exists in this codebase. |
 
 Both providers key off the plain NSE trading symbol (`TATASTEEL`), which is the
-join key throughout.
+join key throughout. Two vendor quirks are handled automatically:
+
+* The Indian API cannot resolve symbols containing `&` (`M&M`, `GVT&D`) even
+  URL-encoded. Aliases are discovered via `/industry_search` and cached in
+  `instruments.vendor_lookup_name` rather than hardcoded.
+* Groww's current `get_historical_candles` returns a null `open` for every daily
+  equity candle and caps a request at 180 days. The deprecated
+  `get_historical_candle_data` returns complete OHLCV over 1080 days, so daily
+  bars use it, falling back to the current endpoint if it is withdrawn.
 
 ### Point-in-time correctness
 
@@ -85,6 +94,26 @@ Tests run against real Postgres inside a rolled-back transaction. Note that
 Neon's pooled (`-pooler`) endpoint is PgBouncer in transaction mode: session
 state leaks between clients, so no code here may issue a session-level `SET` —
 `search_path` is pinned by a role default instead.
+
+## Ingest
+
+```bash
+uv run python -m app.ingest.jobs nightly          # everything, staggered
+uv run python -m app.ingest.jobs instruments      # master list + Nifty 200 seed
+uv run python -m app.ingest.jobs bars             # daily OHLCV (Groww)
+uv run python -m app.ingest.jobs estimates --full # analyst estimates + targets
+uv run python -m app.ingest.jobs fundamentals --full
+uv run python -m app.ingest.jobs bars --symbols RELIANCE,TATASTEEL
+```
+
+Expensive jobs are **staggered**: each nightly run refreshes one slice of the
+universe, cycling through it over a week rather than spending a week's API
+budget in one night. `--full` overrides that, and an explicit `--symbols` list
+implies it.
+
+The Indian API publishes no quota headers, so every call is counted in
+`provider_calls_daily` and checked against `INDIAN_API_DAILY_BUDGET` before it
+is made. Exhausting the budget raises rather than silently truncating a run.
 
 ## Admin CLI
 

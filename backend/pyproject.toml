@@ -21,6 +21,7 @@ dependencies = [
     "scipy>=1.14",
     "python-dateutil>=2.9",
     "tenacity>=9.0",
+    "growwapi>=1.5.0",
 ]
 
 [dependency-groups]
@@ -36,6 +37,8 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Alembic writes these; they are not hand-maintained source.
+extend-exclude = ["app/db/migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RUF"]
