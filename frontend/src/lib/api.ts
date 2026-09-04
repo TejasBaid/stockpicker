@@ -368,3 +368,49 @@ export const portfolioApi = {
       `/api/v1/portfolios/_search/instruments?q=${encodeURIComponent(q)}`,
     ),
 }
+
+export interface SavedStrategy {
+  id: string
+  slug: string
+  name: string
+  description: string | null
+  version: number
+  weights: Record<string, number>
+  filters: { factor: string; op: string; value: number }[]
+  max_per_sector: number | null
+  limit: number
+  updated_at: string
+}
+
+export interface WatchlistData {
+  id: string
+  as_of?: string | null
+  factors?: string[]
+  items: {
+    symbol: string
+    name: string | null
+    sector: string | null
+    note: string | null
+    deciles: Record<string, number | null>
+  }[]
+}
+
+export const strategyApi = {
+  list: () => api.get<SavedStrategy[]>('/api/v1/strategies'),
+  save: (body: {
+    name: string
+    description?: string
+    weights: Record<string, number>
+    filters?: { factor: string; op: string; value: number }[]
+    max_per_sector?: number | null
+    limit?: number
+  }) => api.post<SavedStrategy>('/api/v1/strategies', body),
+  remove: (id: string) => api.del<void>(`/api/v1/strategies/${id}`),
+}
+
+export const watchlistApi = {
+  get: () => api.get<WatchlistData>('/api/v1/watchlist'),
+  add: (symbol: string, note?: string) =>
+    api.post<{ symbol: string }>('/api/v1/watchlist/items', { symbol, note }),
+  remove: (symbol: string) => api.del<void>(`/api/v1/watchlist/items/${symbol}`),
+}

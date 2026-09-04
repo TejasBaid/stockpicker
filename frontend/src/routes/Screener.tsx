@@ -1,5 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { Download, Play, SlidersHorizontal } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Bookmark, Download, Play, SlidersHorizontal } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { PageHeader } from '@/components/layout/AppShell'
 import { Alert } from '@/components/ui/alert'
@@ -7,7 +7,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
-import { screenerApi, type FactorMeta, type Preset, type ScreenResponse } from '@/lib/api'
+import {
+  screenerApi,
+  strategyApi,
+  type FactorMeta,
+  type Preset,
+  type ScreenResponse,
+} from '@/lib/api'
 import { cn, formatNumber } from '@/lib/utils'
 
 const CATEGORY_ORDER = [
@@ -21,6 +27,7 @@ const CATEGORY_ORDER = [
 ] as const
 
 export default function Screener() {
+  const qc = useQueryClient()
   const { data: catalogue } = useQuery({
     queryKey: ['screener', 'factors'],
     queryFn: screenerApi.factors,
@@ -38,8 +45,21 @@ export default function Screener() {
   const [limit, setLimit] = useState(25)
   const [maxPerSector, setMaxPerSector] = useState<number | null>(4)
   const [showFactors, setShowFactors] = useState(false)
+  const [savedName, setSavedName] = useState<string | null>(null)
 
   const screen = useMutation({ mutationFn: screenerApi.run })
+
+  const { data: saved } = useQuery({ queryKey: ['strategies'], queryFn: strategyApi.list })
+
+  const saveStrategy = useMutation({
+    mutationFn: (name: string) =>
+      strategyApi.save({ name, weights, filters, max_per_sector: maxPerSector, limit }),
+    onSuccess: (s) => {
+      setSavedName(s.name)
+      qc.invalidateQueries({ queryKey: ['strategies'] })
+      setTimeout(() => setSavedName(null), 4000)
+    },
+  })
 
   const factorsByName = useMemo(() => {
     const map = new Map<string, FactorMeta>()
@@ -91,12 +111,29 @@ export default function Screener() {
         title="Screener"
         description="Rank the Nifty 200 by any combination of factors. Scores are point-in-time."
         action={
-          result ? (
-            <Button variant="secondary" size="sm" onClick={() => exportCsv(result)}>
-              <Download className="h-3.5 w-3.5" />
-              Export
+          <div className="flex items-center gap-2">
+            {savedName ? (
+              <span className="text-pos text-xs">Saved “{savedName}”</span>
+            ) : null}
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!Object.keys(weights).length || saveStrategy.isPending}
+              onClick={() => {
+                const name = window.prompt('Name this strategy')
+                if (name) saveStrategy.mutate(name)
+              }}
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+              Save as strategy
             </Button>
-          ) : null
+            {result ? (
+              <Button variant="secondary" size="sm" onClick={() => exportCsv(result)}>
+                <Download className="h-3.5 w-3.5" />
+                Export
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
@@ -114,6 +151,20 @@ export default function Screener() {
           />
           <CardBody className="space-y-4">
             <div className="flex flex-wrap gap-2">
+              {saved?.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setActivePreset(null)
+                    setWeights(s.weights)
+                    setFilters(s.filters as Preset['filters'])
+                  }}
+                  title={`Your saved strategy · v${s.version}`}
+                  className="rounded-md border border-[var(--accent)]/40 px-3 py-1.5 text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10"
+                >
+                  {s.name}
+                </button>
+              ))}
               {presetData?.presets.map((p) => (
                 <button
                   key={p.slug}

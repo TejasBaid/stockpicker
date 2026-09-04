@@ -5,8 +5,9 @@ import { useCurrentUser } from '@/hooks/useAuth'
 import Backtests from '@/routes/Backtests'
 import DataHealth from '@/routes/DataHealth'
 import PortfolioPage from '@/routes/PortfolioPage'
+import Strategies from '@/routes/Strategies'
+import WatchlistPage from '@/routes/WatchlistPage'
 import Screener from '@/routes/Screener'
-import { Placeholder } from '@/routes/Placeholder'
 import SignIn from '@/routes/SignIn'
 import SignUp from '@/routes/SignUp'
 
@@ -39,24 +40,10 @@ export default function App() {
         }
       >
         <Route index element={<Screener />} />
-        <Route
-          path="strategies"
-          element={
-            <Placeholder
-              title="Strategies"
-              description="Build, save and version your own multi-factor strategies."
-              phase="phase 3"
-            />
-          }
-        />
+        <Route path="strategies" element={<Strategies />} />
         <Route path="backtests" element={<Backtests />} />
         <Route path="portfolio" element={<PortfolioPage />} />
-        <Route
-          path="watchlist"
-          element={
-            <Placeholder title="Watchlist" description="Names you're tracking." phase="phase 4" />
-          }
-        />
+        <Route path="watchlist" element={<WatchlistPage />} />
         <Route path="data" element={<DataHealth />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
