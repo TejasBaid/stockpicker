@@ -6,9 +6,9 @@ position tracking with planned exits.
 
 ## Status
 
-**Phase 2 — factors and screener.** The Nifty 200 is loaded and screenable
-across 48 factors. Strategy building, backtests and portfolio tracking arrive
-in phases 3–4.
+**Phase 3 — backtesting.** The Nifty 200 is loaded, screenable across 48
+factors, and backtestable point-in-time with Indian transaction costs.
+Portfolio tracking and exit planning arrive in phase 4.
 
 ## Data sources
 
@@ -120,6 +120,40 @@ Two things worth knowing about the data:
 * Factors built on balance-sheet structure — net cash, interest coverage — are
   masked for lenders, whose borrowings are their raw material rather than
   leverage. They are not merely extreme there, they are meaningless.
+
+## Backtesting
+
+Walk-forward and strictly point-in-time: at every rebalance date the engine
+rebuilds the panel *as of that date* and recomputes the strategy's factors from
+it. It never reuses the precomputed factor table, because that table describes
+today.
+
+Historical fundamentals are reconstructed from the statements rather than the
+vendor's precomputed metrics — those are a single snapshot of today with no
+history. Market capitalisation comes from the price on the date and the share
+count then reported, trailing-twelve-month profit from the four quarters known
+by then, and so on. Nothing uses a figure the market could not have seen, and
+`tests/test_backtest.py` asserts it rather than assuming it.
+
+**On benchmarks.** Results are reported against the equal-weighted Nifty 200 as
+well as the Nifty 50, and the equal-weighted line is the one that matters. The
+Nifty 50 is large-cap only, so *any* Nifty 200 strategy beats it whenever mid
+caps lead — a null strategy holding 150 of the 200 names returned 15.6% a year
+against the index's 6.8% while containing no skill whatsoever. Measured against
+the Nifty 50, the quality-value preset shows +14.6pp of "alpha"; measured
+against equal-weighting the same universe, it shows **−0.8pp**. The platform
+reports the honest number.
+
+Costs are modelled per component — STT, stamp duty (buy side only), exchange
+and SEBI charges, GST on brokerage, and slippage — because turnover matters: a
+quarterly strategy spends 2–4% of capital a year, and a momentum strategy 8%.
+
+Backtests run as queued jobs on a GitHub Actions worker, not in the web
+process:
+
+```bash
+uv run python -m app.backtest.worker --max-jobs 5
+```
 
 ## Ingest
 

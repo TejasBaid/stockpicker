@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Spinner } from '@/components/ui/spinner'
 import { useCurrentUser } from '@/hooks/useAuth'
+import Backtests from '@/routes/Backtests'
 import DataHealth from '@/routes/DataHealth'
 import Screener from '@/routes/Screener'
 import { Placeholder } from '@/routes/Placeholder'
@@ -47,16 +48,7 @@ export default function App() {
             />
           }
         />
-        <Route
-          path="backtests"
-          element={
-            <Placeholder
-              title="Backtests"
-              description="Point-in-time walk-forward tests with Indian transaction costs."
-              phase="phase 3"
-            />
-          }
-        />
+        <Route path="backtests" element={<Backtests />} />
         <Route
           path="portfolio"
           element={

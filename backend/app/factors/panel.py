@@ -133,9 +133,11 @@ def build_panel(
             if BENCHMARK_SYMBOL in prices.columns
             else pd.Series(dtype=float)
         )
-        for frame in (prices, volumes, highs, lows):
-            if BENCHMARK_SYMBOL in frame.columns and BENCHMARK_SYMBOL not in symbols:
-                frame.drop(columns=[BENCHMARK_SYMBOL], inplace=True)
+        if BENCHMARK_SYMBOL not in symbols:
+            prices, volumes, highs, lows = (
+                f.drop(columns=[BENCHMARK_SYMBOL]) if BENCHMARK_SYMBOL in f.columns else f
+                for f in (prices, volumes, highs, lows)
+            )
 
     snapshots = db.scalars(_latest_known_snapshot(as_of, symbols)).all()
     fundamentals = _snapshots_to_frame(snapshots, symbols)
@@ -216,7 +218,7 @@ def build_panel(
         share_rows, columns=["symbol", "holding_date", "category", "percentage"]
     )
 
-    return Panel(
+    panel = Panel(
         as_of=as_of,
         symbols=symbols,
         sectors=sectors,
@@ -232,6 +234,14 @@ def build_panel(
         targets=targets,
         shareholding=shareholding,
     )
+
+    # Historical dates have no vendor snapshot -- those only start accumulating
+    # once this platform runs. Rebuild what we can from the statements, which
+    # do have history and carry known_on.
+    from app.factors.derived import fill_from_statements
+
+    panel.fundamentals = fill_from_statements(panel)
+    return panel
 
 
 _SNAPSHOT_SKIP = {"id", "symbol", "snapshot_date", "raw", "created_at", "updated_at"}

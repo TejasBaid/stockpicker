@@ -1,0 +1,29 @@
+name: Backtest worker
+
+# Backtests rebuild a point-in-time panel at every rebalance date, which a
+# 512 MB Render instance cannot do. The API enqueues; this claims and runs.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: backtest-worker
+  cancel-in-progress: false
+
+jobs:
+  work:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run python -m app.backtest.worker --max-jobs 5
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

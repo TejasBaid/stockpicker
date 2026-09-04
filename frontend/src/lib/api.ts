@@ -204,3 +204,63 @@ export const screenerApi = {
     basis?: string
   }) => api.post<ScreenResponse>('/api/v1/screener/run', body),
 }
+
+export interface BacktestMetrics {
+  total_return_pct: number
+  cagr_pct: number
+  volatility_pct: number
+  sharpe: number | null
+  sortino: number | null
+  max_drawdown_pct: number
+  calmar: number | null
+  positive_days_pct: number
+  benchmark_cagr_pct?: number
+  benchmark_max_drawdown_pct?: number
+  alpha_pct?: number
+  universe_cagr_pct?: number
+  universe_max_drawdown_pct?: number
+  alpha_vs_universe_pct?: number
+  beta?: number
+  information_ratio?: number
+  total_costs: number
+  cost_drag_pct: number
+  trades: number
+  rebalances: number
+}
+
+export interface CurvePoint {
+  date: string
+  value: number
+}
+
+export interface BacktestResult {
+  start: string
+  end: string
+  frequency: string
+  holdings: number
+  initial_capital: number
+  final_value: number
+  metrics: BacktestMetrics
+  equity_curve: CurvePoint[]
+  benchmark_curve: CurvePoint[]
+  universe_curve: CurvePoint[]
+  monthly_returns: { month: string; return_pct: number }[]
+  rebalance_log: { date: string; holdings: string[]; count: number }[]
+}
+
+export interface BacktestJob {
+  id: string
+  status: 'queued' | 'running' | 'done' | 'failed'
+  progress: number
+  error: string | null
+  created_at: string
+  finished_at: string | null
+  params: Record<string, unknown>
+  result?: BacktestResult | null
+}
+
+export const backtestApi = {
+  enqueue: (body: Record<string, unknown>) => api.post<BacktestJob>('/api/v1/backtests', body),
+  list: () => api.get<BacktestJob[]>('/api/v1/backtests'),
+  get: (id: string) => api.get<BacktestJob>(`/api/v1/backtests/${id}`),
+}
