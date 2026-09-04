@@ -60,6 +60,8 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
+  put: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: 'PUT', body: body ? JSON.stringify(body) : undefined }),
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined }),
   del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
@@ -263,4 +265,106 @@ export const backtestApi = {
   enqueue: (body: Record<string, unknown>) => api.post<BacktestJob>('/api/v1/backtests', body),
   list: () => api.get<BacktestJob[]>('/api/v1/backtests'),
   get: (id: string) => api.get<BacktestJob>(`/api/v1/backtests/${id}`),
+}
+
+export interface PortfolioSummary {
+  id: string
+  name: string
+  description: string | null
+  cash: number
+  positions: number
+  invested: number
+  market_value: number
+  total_value: number
+  pnl: number
+  pnl_pct: number
+}
+
+export interface FactorDrift {
+  factor: string
+  entry_decile: number
+  current_decile: number
+  drift: number
+}
+
+export interface Holding {
+  id: string
+  symbol: string
+  name: string | null
+  sector: string | null
+  quantity: number
+  avg_price: number
+  last_price: number
+  invested: number
+  market_value: number
+  pnl: number
+  pnl_pct: number
+  weight_pct: number
+  opened_on: string
+  held_days: number
+  tax_status: 'long-term' | 'short-term'
+  days_to_long_term: number
+  thesis: string | null
+  conviction: string | null
+  exit_plan: {
+    stop_type: string | null
+    stop_price: number | null
+    stop_distance_pct: number | null
+    target_ladder: { price: number; pct: number }[] | null
+    time_stop_on: string | null
+    triggers: string[]
+    notes: string | null
+  } | null
+  factor_drift: FactorDrift[]
+}
+
+export interface PortfolioDetail extends PortfolioSummary {
+  holdings: Holding[]
+  tax: {
+    short_term_gain: number
+    long_term_gain: number
+    estimated_tax: number
+    ltcg_exemption_used: number
+    note: string
+  }
+}
+
+export interface PortfolioAlert {
+  symbol: string
+  kind: 'exit' | 'factor_decay' | 'tax'
+  message: string
+}
+
+export const portfolioApi = {
+  list: () => api.get<PortfolioSummary[]>('/api/v1/portfolios'),
+  create: (body: { name: string; description?: string; cash?: number }) =>
+    api.post<PortfolioSummary>('/api/v1/portfolios', body),
+  get: (id: string) => api.get<PortfolioDetail>(`/api/v1/portfolios/${id}`),
+  alerts: (id: string) => api.get<PortfolioAlert[]>(`/api/v1/portfolios/${id}/alerts`),
+  addPosition: (
+    id: string,
+    body: {
+      symbol: string
+      quantity: number
+      avg_price: number
+      opened_on: string
+      thesis?: string
+      conviction?: string
+    },
+  ) => api.post<{ id: string }>(`/api/v1/portfolios/${id}/positions`, body),
+  removePosition: (id: string, positionId: string) =>
+    api.del<void>(`/api/v1/portfolios/${id}/positions/${positionId}`),
+  setExitPlan: (
+    id: string,
+    positionId: string,
+    body: Record<string, unknown>,
+  ) => api.put<{ ok: boolean }>(`/api/v1/portfolios/${id}/positions/${positionId}/exit-plan`, body),
+  stopSuggestion: (id: string, symbol: string) =>
+    api.get<{ price: number; atr: number; stop: number; stop_distance_pct: number }>(
+      `/api/v1/portfolios/${id}/stop-suggestion/${symbol}`,
+    ),
+  searchInstruments: (q: string) =>
+    api.get<{ symbol: string; name: string }[]>(
+      `/api/v1/portfolios/_search/instruments?q=${encodeURIComponent(q)}`,
+    ),
 }

@@ -4,6 +4,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { useCurrentUser } from '@/hooks/useAuth'
 import Backtests from '@/routes/Backtests'
 import DataHealth from '@/routes/DataHealth'
+import PortfolioPage from '@/routes/PortfolioPage'
 import Screener from '@/routes/Screener'
 import { Placeholder } from '@/routes/Placeholder'
 import SignIn from '@/routes/SignIn'
@@ -49,16 +50,7 @@ export default function App() {
           }
         />
         <Route path="backtests" element={<Backtests />} />
-        <Route
-          path="portfolio"
-          element={
-            <Placeholder
-              title="Portfolio"
-              description="Track positions, plan exits and review theses."
-              phase="phase 4"
-            />
-          }
-        />
+        <Route path="portfolio" element={<PortfolioPage />} />
         <Route
           path="watchlist"
           element={

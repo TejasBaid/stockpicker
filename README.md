@@ -6,9 +6,9 @@ position tracking with planned exits.
 
 ## Status
 
-**Phase 3 — backtesting.** The Nifty 200 is loaded, screenable across 48
-factors, and backtestable point-in-time with Indian transaction costs.
-Portfolio tracking and exit planning arrive in phase 4.
+**Feature complete.** The Nifty 200 is loaded, screenable across 48 factors,
+backtestable point-in-time with Indian transaction costs, and trackable as a
+portfolio with exit plans and tax treatment.
 
 ## Data sources
 
@@ -183,6 +183,24 @@ uv run python -m app.cli whoami
 uv run python -m app.cli delete-user EMAIL
 uv run python -m app.cli purge-sessions
 ```
+
+## Portfolio
+
+Positions are entered by hand — this platform never reads your brokerage
+account. Valuation uses the latest stored daily close rather than a live quote,
+so the request path makes no external call and works whether or not the market
+is open.
+
+* **Exit plans defined at entry, not in a panic.** ATR-based stops (resolved to
+  a price at planning time, so they are a commitment rather than a moving
+  target), target ladders, and time stops.
+* **Factor-decay exits.** The factor deciles behind the thesis are snapshotted
+  when a position opens, so the platform can tell you that the quality rank you
+  bought on has fallen from decile 2 to decile 8 — a reasoned exit rather than a
+  reaction to price.
+* **Indian tax treatment.** First-in-first-out lot matching as brokers report
+  it, the twelve-month long-term boundary, the ₹1.25 lakh LTCG exemption, and a
+  countdown of days until a holding qualifies. Estimates only, not tax advice.
 
 ## Not investment advice
 
