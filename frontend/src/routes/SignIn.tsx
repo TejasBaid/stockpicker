@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
+import { Logo } from '@/components/layout/AppShell'
 import { useSignIn } from '@/hooks/useAuth'
 import { ApiError } from '@/lib/api'
 
@@ -84,16 +85,12 @@ export function AuthLayout({
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1.5 text-center">
           <div className="mb-5 flex justify-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent)] text-[var(--accent-fg)]">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M3 17l5-5 4 3 8-8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
+            <Logo className="h-11 w-11" />
           </div>
           <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
           <p className="text-muted text-sm">{subtitle}</p>
         </div>
-        <div className="surface rounded-lg border p-6">{children}</div>
+        <div className="surface rounded-card border p-7">{children}</div>
       </div>
     </div>
   )
