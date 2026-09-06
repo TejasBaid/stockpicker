@@ -4,6 +4,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { useCurrentUser } from '@/hooks/useAuth'
 import Backtests from '@/routes/Backtests'
 import DataHealth from '@/routes/DataHealth'
+import Plan from '@/routes/Plan'
 import PortfolioPage from '@/routes/PortfolioPage'
 import Strategies from '@/routes/Strategies'
 import WatchlistPage from '@/routes/WatchlistPage'
@@ -40,6 +41,7 @@ export default function App() {
         }
       >
         <Route index element={<Screener />} />
+        <Route path="plan" element={<Plan />} />
         <Route path="strategies" element={<Strategies />} />
         <Route path="backtests" element={<Backtests />} />
         <Route path="portfolio" element={<PortfolioPage />} />

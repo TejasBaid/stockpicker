@@ -48,7 +48,7 @@ export default function PortfolioPage() {
     return (
       <>
         <PageHeader title="Portfolio" />
-        <div className="text-muted flex items-center gap-2 p-6 text-sm">
+        <div className="text-muted flex items-center gap-2 px-7 pb-8 text-sm">
           <Spinner /> Loading…
         </div>
       </>
@@ -59,7 +59,7 @@ export default function PortfolioPage() {
     return (
       <>
         <PageHeader title="Portfolio" description="Track positions and plan exits." />
-        <div className="p-6">
+        <div className="px-7 pb-8">
           <Card>
             <CardBody className="space-y-4">
               <div>
@@ -96,7 +96,7 @@ export default function PortfolioPage() {
         }
       />
 
-      <div className="space-y-5 p-6">
+      <div className="space-y-4 px-7 pb-8">
         {detail ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Total value" value={formatInr(detail.total_value, { compact: true })} />
@@ -152,15 +152,15 @@ export default function PortfolioPage() {
               <table className="w-full text-sm">
                 <thead className="text-muted border-b text-xs">
                   <tr>
-                    <th className="px-4 py-2.5 text-left font-medium">Company</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Qty</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Avg</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Last</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Value</th>
-                    <th className="px-4 py-2.5 text-right font-medium">P&L</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Weight</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Tax</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Exit plan</th>
+                    <th className="px-6 py-3 text-left font-medium">Company</th>
+                    <th className="px-6 py-3 text-right font-medium">Qty</th>
+                    <th className="px-6 py-3 text-right font-medium">Avg</th>
+                    <th className="px-6 py-3 text-right font-medium">Last</th>
+                    <th className="px-6 py-3 text-right font-medium">Value</th>
+                    <th className="px-6 py-3 text-right font-medium">P&L</th>
+                    <th className="px-6 py-3 text-right font-medium">Weight</th>
+                    <th className="px-6 py-3 text-left font-medium">Tax</th>
+                    <th className="px-6 py-3 text-left font-medium">Exit plan</th>
                   </tr>
                 </thead>
                 <tbody>

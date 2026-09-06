@@ -19,7 +19,7 @@ export default function DataHealth() {
     return (
       <>
         <PageHeader title="Data health" />
-        <div className="text-muted flex items-center gap-2 p-6 text-sm">
+        <div className="text-muted flex items-center gap-2 px-7 pb-8 text-sm">
           <Spinner /> Loading…
         </div>
       </>
@@ -30,7 +30,7 @@ export default function DataHealth() {
     return (
       <>
         <PageHeader title="Data health" />
-        <div className="p-6">
+        <div className="px-7 pb-8">
           <Alert tone="error">{(error as Error).message}</Alert>
         </div>
       </>
@@ -57,7 +57,7 @@ export default function DataHealth() {
         }
       />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 px-7 pb-8">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Universe" value={data.universe_size} hint="Nifty 200 constituents" />
           <Stat
@@ -102,11 +102,11 @@ export default function DataHealth() {
             <table className="w-full text-sm">
               <thead className="text-muted border-b text-xs">
                 <tr>
-                  <th className="px-5 py-2.5 text-left font-medium">Dataset</th>
-                  <th className="px-5 py-2.5 text-left font-medium">Source</th>
-                  <th className="px-5 py-2.5 text-right font-medium">Symbols</th>
-                  <th className="px-5 py-2.5 text-right font-medium">Rows</th>
-                  <th className="px-5 py-2.5 text-left font-medium">Coverage</th>
+                  <th className="px-6 py-3 text-left font-medium">Dataset</th>
+                  <th className="px-6 py-3 text-left font-medium">Source</th>
+                  <th className="px-6 py-3 text-right font-medium">Symbols</th>
+                  <th className="px-6 py-3 text-right font-medium">Rows</th>
+                  <th className="px-6 py-3 text-left font-medium">Coverage</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,12 +146,12 @@ export default function DataHealth() {
             <table className="w-full text-sm">
               <thead className="text-muted border-b text-xs">
                 <tr>
-                  <th className="px-5 py-2.5 text-left font-medium">Job</th>
-                  <th className="px-5 py-2.5 text-left font-medium">Started</th>
-                  <th className="px-5 py-2.5 text-right font-medium">Duration</th>
-                  <th className="px-5 py-2.5 text-right font-medium">Rows</th>
-                  <th className="px-5 py-2.5 text-right font-medium">Symbols</th>
-                  <th className="px-5 py-2.5 text-left font-medium">Status</th>
+                  <th className="px-6 py-3 text-left font-medium">Job</th>
+                  <th className="px-6 py-3 text-left font-medium">Started</th>
+                  <th className="px-6 py-3 text-right font-medium">Duration</th>
+                  <th className="px-6 py-3 text-right font-medium">Rows</th>
+                  <th className="px-6 py-3 text-right font-medium">Symbols</th>
+                  <th className="px-6 py-3 text-left font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>

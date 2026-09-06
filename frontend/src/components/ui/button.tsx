@@ -3,18 +3,21 @@ import type { ButtonHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ' +
+  'inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all ' +
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ' +
-    'disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap',
+    'focus-visible:ring-offset-[var(--bg)] disabled:pointer-events-none disabled:opacity-50 ' +
+    'whitespace-nowrap active:scale-[0.98]',
   {
     variants: {
       variant: {
         primary:
-          'bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-90 focus-visible:ring-[var(--accent)]',
+          'bg-[var(--accent)] text-[var(--accent-fg)] shadow-[0_2px_12px_-2px_var(--accent-soft)] ' +
+          'hover:brightness-110 focus-visible:ring-[var(--accent)]',
         secondary:
-          'surface-2 text-[var(--text)] border hover:bg-[var(--border)] focus-visible:ring-[var(--border)]',
+          'surface-2 text-[var(--text)] border hover:border-[var(--border-strong)] ' +
+          'hover:surface-3 focus-visible:ring-[var(--border-strong)]',
         ghost: 'text-muted hover:surface-2 hover:text-[var(--text)]',
-        danger: 'bg-[var(--neg)] text-white hover:opacity-90',
+        danger: 'bg-[var(--neg)] text-white hover:brightness-110',
       },
       size: {
         sm: 'h-8 px-3 text-xs',

@@ -14,19 +14,20 @@ export function Alert({
   className?: string
 }) {
   const Icon = icons[tone]
-  const toneClass =
-    tone === 'error'
-      ? 'text-neg border-[var(--neg)]/40'
-      : tone === 'success'
-        ? 'text-pos border-[var(--pos)]/40'
-        : 'text-muted'
+  const color =
+    tone === 'error' ? 'var(--neg)' : tone === 'success' ? 'var(--pos)' : 'var(--text-muted)'
+  const background =
+    tone === 'error' ? 'var(--neg-soft)' : tone === 'success' ? 'var(--pos-soft)' : 'var(--surface-2)'
   return (
     <div
       role={tone === 'error' ? 'alert' : 'status'}
-      className={cn('surface-2 flex gap-2.5 rounded-md border px-3 py-2.5 text-sm', toneClass, className)}
+      className={cn('rounded-card flex gap-3 border px-4 py-3 text-sm', className)}
+      style={{ background, borderColor: tone === 'info' ? 'var(--border)' : color }}
     >
-      <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-      <div className="min-w-0">{children}</div>
+      <Icon className="mt-0.5 h-4 w-4 shrink-0" style={{ color }} />
+      <div className="min-w-0" style={{ color: tone === 'info' ? 'var(--text)' : color }}>
+        {children}
+      </div>
     </div>
   )
 }

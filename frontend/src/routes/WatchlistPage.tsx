@@ -51,7 +51,7 @@ export default function WatchlistPage() {
         title="Watchlist"
         description="Names you're tracking, with where they currently rank."
       />
-      <div className="space-y-5 p-6">
+      <div className="space-y-4 px-7 pb-8">
         <Card>
           <CardBody className="flex flex-wrap items-end gap-3">
             <div className="min-w-48">
@@ -108,10 +108,10 @@ export default function WatchlistPage() {
               <table className="w-full text-sm">
                 <thead className="text-muted border-b text-xs">
                   <tr>
-                    <th className="px-4 py-2.5 text-left font-medium">Company</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Sector</th>
+                    <th className="px-6 py-3 text-left font-medium">Company</th>
+                    <th className="px-6 py-3 text-left font-medium">Sector</th>
                     {factors.map((f) => (
-                      <th key={f} className="px-4 py-2.5 text-center font-medium">
+                      <th key={f} className="px-6 py-3 text-center font-medium">
                         {labels.get(f) ?? f}
                       </th>
                     ))}

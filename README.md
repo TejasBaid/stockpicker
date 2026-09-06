@@ -184,6 +184,35 @@ uv run python -m app.cli delete-user EMAIL
 uv run python -m app.cli purge-sessions
 ```
 
+## Planning
+
+Enter an amount and the platform works out how much to commit and where.
+
+**How much.** A market-regime read blends four signals — index trend against
+its own moving averages, breadth (what share of the universe is above its own
+200-day), distance from the 52-week high, and realised volatility against its
+own history — into a suggested deployment percentage and a staged entry across
+two or three tranches. Trend and breadth carry the most weight; they describe
+the market you are buying, while drawdown and volatility describe how it feels.
+The suggestion is overridable, and it never recommends sitting entirely in
+cash: that is a market-timing bet of its own, and usually a losing one.
+
+**Where.** The chosen strategy ranks the universe; sizing converts that into
+*whole shares* at the last close under equal, inverse-volatility, equal-risk or
+conviction weighting. Names that cannot be bought — a single Page Industries
+share costs more than its slice of a small pot — are dropped and their weight
+redistributed, rather than leaving the money idle. Any suggestion can be
+swapped out, and the next-ranked candidate takes its place.
+
+Each position carries an ATR stop and the rupee amount at risk if it triggers,
+so the plan states its own worst case up front.
+
+Corporate actions are used for timing rather than selection: where a stock goes
+ex-dividend within days, the plan says so. For an Indian taxable investor,
+buying just before an ex-date means paying for a dividend that is then taxed at
+your slab rate while the price drops by roughly the same amount. (The vendor
+populates dividends only — its bonus, split and rights feeds come back empty.)
+
 ## Portfolio
 
 Positions are entered by hand — this platform never reads your brokerage

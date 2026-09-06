@@ -82,7 +82,7 @@ export default function Backtests() {
         description="Point-in-time walk-forward, with Indian transaction costs. Nothing sees a result before it was announced."
       />
 
-      <div className="space-y-5 p-6">
+      <div className="space-y-4 px-7 pb-8">
         <Card>
           <CardHeader title="Run a backtest" />
           <CardBody>

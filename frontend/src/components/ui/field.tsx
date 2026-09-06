@@ -17,15 +17,15 @@ export function Field({
   className?: string
 }) {
   return (
-    <div className={cn('space-y-1.5', className)}>
-      <label htmlFor={htmlFor} className="block text-sm font-medium">
+    <div className={cn('space-y-2', className)}>
+      <label htmlFor={htmlFor} className="text-muted block text-xs font-medium">
         {label}
       </label>
       {children}
       {error ? (
         <p className="text-neg text-xs">{error}</p>
       ) : hint ? (
-        <p className="text-muted text-xs">{hint}</p>
+        <p className="text-dim text-xs leading-relaxed">{hint}</p>
       ) : null}
     </div>
   )

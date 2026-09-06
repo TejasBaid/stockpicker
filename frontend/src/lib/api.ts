@@ -414,3 +414,77 @@ export const watchlistApi = {
     api.post<{ symbol: string }>('/api/v1/watchlist/items', { symbol, note }),
   remove: (symbol: string) => api.del<void>(`/api/v1/watchlist/items/${symbol}`),
 }
+
+export interface RegimeSignal {
+  key: string
+  label: string
+  score: number
+  detail: string
+}
+
+export interface Tranche {
+  share: number
+  in_days: number
+  on_or_after: string
+  label: string
+}
+
+export interface Allocation {
+  symbol: string
+  name: string | null
+  sector: string | null
+  rank: number
+  score: number
+  price: number
+  shares: number
+  value: number
+  target_weight_pct: number
+  actual_weight_pct?: number
+  volatility_pct: number | null
+  stop: number | null
+  stop_distance_pct: number | null
+  risk_amount: number | null
+  dividend: { dividend_ttm: number; yield_pct: number; years_paid_of_5: number } | null
+  corporate_actions: {
+    type: string
+    ex_date: string
+    days_away: number
+    value: number | null
+    remarks: string | null
+    imminent: boolean
+  }[]
+  warning: string | null
+}
+
+export interface InvestmentPlan {
+  as_of: string
+  capital: number
+  regime: {
+    state: 'risk_on' | 'neutral' | 'risk_off'
+    score: number
+    suggested_deploy_pct: number
+    signals: RegimeSignal[]
+    note: string
+    as_of: string
+  }
+  deploy_pct: number
+  deployable: number
+  invested: number
+  cash_reserve: number
+  uninvested_cash: number
+  tranches: Tranche[]
+  sizing: string
+  positions: number
+  allocations: Allocation[]
+  alternates: { symbol: string; name: string | null; sector: string | null; score: number }[]
+  skipped: { symbol: string; reason: string }[]
+  total_risk_amount: number
+  total_risk_pct: number
+  sector_exposure: { sector: string; value: number; pct: number }[]
+  pinned?: string
+}
+
+export const planApi = {
+  regime: () => api.get<InvestmentPlan['regime'] & { tranches: Tranche[] }>('/api/v1/plan/regime'),
+  create: (body: Record<string, unknown>) => api.post<InvestmentPlan>('/api/v1/plan', body),
+}

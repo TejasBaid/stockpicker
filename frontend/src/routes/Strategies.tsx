@@ -35,7 +35,7 @@ export default function Strategies() {
         title="Strategies"
         description="Your saved factor weightings. Save one from the screener once you like a combination."
       />
-      <div className="space-y-4 p-6">
+      <div className="space-y-4 px-7 pb-8">
         {isPending ? (
           <div className="text-muted flex items-center gap-2 text-sm">
             <Spinner /> Loading…
