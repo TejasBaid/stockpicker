@@ -233,27 +233,8 @@ is open.
 
 ## Deploying
 
-1. **Neon** — already provisioned. `alembic upgrade head` runs on every Render
-   boot, so migrations apply themselves.
-2. **GitHub secrets** (Settings → Secrets and variables → Actions): add
-   `DATABASE_URL`, `GROWW_API_KEY`, `GROWW_SECRET`, `INDIAN_API_KEY`. Optionally
-   set the `INDIAN_API_DAILY_BUDGET` repository *variable*. Without these the
-   nightly ingest and the backtest worker cannot run.
-3. **Render** — deploy `render.yaml` as a blueprint. Set `DATABASE_URL`,
-   the two Groww secrets, `INDIAN_API_KEY`, and `CORS_ORIGINS` (the static
-   site's URL) on the API service, and `VITE_API_URL` (the API's URL) on the
-   static site.
-4. **Keep-warm pinger** — point a free service (cron-job.org, UptimeRobot) at
-   `https://<api>/health` every 10 minutes, weekdays 09:00–16:00 IST only. That
-   is roughly 154 of the 750 free instance-hours a month, so the API is awake
-   when you use it and asleep the rest of the time.
-5. **First account** — `python -m app.cli invite` to mint a code. The first
-   account created becomes the administrator.
-
-GitHub disables scheduled workflows after 60 days of repository inactivity, and
-scheduled runs can be delayed 10–15 minutes at peak. Neither matters for a
-nightly ingest; if it ever does, the ingest is a standalone CLI, so promoting it
-to a paid Render cron job is a config change rather than a rewrite.
+See **[DEPLOY.md](DEPLOY.md)** for the checklist: GitHub Actions secrets, the
+Render blueprint, and the keep-warm pinger.
 
 ## Not investment advice
 
