@@ -6,14 +6,19 @@
 #
 # The free tier has no persistent disk (all state lives in Neon) and no cron
 # jobs, which is why ingest runs in GitHub Actions instead. See
-# .github/workflows/ingest-nightly.yml.
+# .github/workflows/.
+#
+# Dependencies come from a pinned requirements.txt exported from uv.lock rather
+# than `pip install -e .`: this project is a flat layout with app/, tests/ and
+# legacy/ side by side, which setuptools cannot auto-discover. Nothing needs to
+# be installed as a package anyway -- uvicorn imports `app` from rootDir.
 services:
   - type: web
     name: screener-api
     runtime: python
     plan: free
     rootDir: backend
-    buildCommand: pip install --upgrade pip && pip install -e .
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: >-
       alembic upgrade head &&
       uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
